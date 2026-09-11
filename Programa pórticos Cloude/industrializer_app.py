@@ -17,35 +17,155 @@ ICON_PATH = ASSETS_DIR / "industrializer.png"
 
 
 class PdfContinueDialog(ctk.CTkToplevel):
+    """Ventana de broma con apariencia de selección de suscripción."""
     def __init__(self, master, on_continue):
         super().__init__(master)
-        self.title("Industrializer — Control de calidad")
-        self.geometry("520x300")
-        self.resizable(False, False)
+        self.title("Industrializer — Elige tu suscripción")
+        self.geometry("980x700")
+        self.minsize(900, 640)
+        self.resizable(True, True)
         self.on_continue = on_continue
         self.protocol("WM_DELETE_WINDOW", self.destroy)
-        ctk.CTkLabel(self, text="⚠  ADVERTENCIA MUY SERIA (más o menos)",
-                     font=ctk.CTkFont(size=18, weight="bold")).pack(pady=(28, 12))
-        ctk.CTkLabel(self, text=(
-            "Industrializer ha detectado que estás a punto de convertir\n"
-            "una previsualización perfectamente normal en un PDF.\n\n"
-            "El equipo de Santos Corp. recomienda pensarlo durante\n"
-            "exactamente 3 segundos antes de continuar."),
-            justify="center", text_color="gray80", font=ctk.CTkFont(size=12)).pack(padx=20, pady=8)
-        row = ctk.CTkFrame(self, fg_color="transparent")
-        row.pack(pady=20)
-        ctk.CTkButton(row, text="Cancelar", fg_color="gray40", command=self.destroy).pack(side="left", padx=8)
-        ctk.CTkButton(row, text="Continuar de todos modos", fg_color="#2f855a",
-                      hover_color="#276749", command=self._continue).pack(side="left", padx=8)
-        self.after(60, self._grab)
+        self.selected_plan = None
+
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            self,
+            text="ELIGE TU SUSCRIPCIÓN MENSUAL",
+            font=ctk.CTkFont(size=27, weight="bold"),
+        ).grid(row=0, column=0, pady=(22, 3))
+
+        ctk.CTkLabel(
+            self,
+            text="Selecciona el plan que mejor se adapte a tus necesidades. Cancela en cualquier momento.",
+            font=ctk.CTkFont(size=12),
+            text_color="gray65",
+        ).grid(row=0, column=0, pady=(62, 0))
+
+        cards = ctk.CTkFrame(self, fg_color="transparent")
+        cards.grid(row=1, column=0, sticky="nsew", padx=28, pady=(22, 8))
+        cards.grid_columnconfigure((0, 1, 2), weight=1, uniform="plans")
+        cards.grid_rowconfigure(0, weight=1)
+
+        self._make_plan_card(
+            cards, 0,
+            "PLAN BÁSICO", "€9.99", "Acceso ilimitado\nSoporte básico\n1 perfil de usuario",
+            "SELECCIONAR PLAN BÁSICO", "#2c9fd3", "#2587b5", "#d9f1f7", "básico"
+        )
+        self._make_plan_card(
+            cards, 1,
+            "PLAN PRO", "€19.99", "Todo el Plan Básico\nSoporte prioritario\nAnálisis avanzado\n3 perfiles de usuario",
+            "SELECCIONAR PLAN PRO", "#b8943f", "#9d7b2e", "#f4ecd9", "pro", popular=True
+        )
+        self._make_plan_card(
+            cards, 2,
+            "PLAN PREMIUM", "€34.99", "Todo el Plan Pro\nSoporte 24/7\nHerramientas exclusivas\nMultiusuario ilimitado",
+            "SELECCIONAR PLAN PREMIUM", "#3aa878", "#2f8b63", "#dff4e8", "premium"
+        )
+
+        bottom = ctk.CTkFrame(self, fg_color="transparent")
+        bottom.grid(row=2, column=0, sticky="ew", padx=28, pady=(2, 18))
+        bottom.grid_columnconfigure(0, weight=1)
+        bottom.grid_columnconfigure(1, weight=0)
+        bottom.grid_columnconfigure(2, weight=1)
+
+        self.plan_status = ctk.CTkLabel(
+            bottom, text="", font=ctk.CTkFont(size=11), text_color="gray60"
+        )
+        self.plan_status.grid(row=0, column=0, sticky="e", padx=12)
+
+        ctk.CTkButton(
+            bottom,
+            text="Continuar de todos modos",
+            width=240,
+            height=40,
+            fg_color="#2f855a",
+            hover_color="#276749",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            command=self._continue,
+        ).grid(row=0, column=1)
+
+        ctk.CTkButton(
+            bottom,
+            text="Cerrar",
+            width=100,
+            height=40,
+            fg_color="gray40",
+            hover_color="gray30",
+            command=self.destroy,
+        ).grid(row=0, column=2, sticky="w", padx=12)
+
+        self.after(80, self._grab)
+
+    def _make_plan_card(self, parent, column, title, price, features, button_text,
+                        accent, hover, header_bg, plan_key, popular=False):
+        card = ctk.CTkFrame(parent, corner_radius=14, border_width=2,
+                            border_color=accent, fg_color=("#ffffff", "#1f2937"))
+        card.grid(row=0, column=column, sticky="nsew", padx=9)
+        card.grid_columnconfigure(0, weight=1)
+        card.grid_rowconfigure(3, weight=1)
+
+        head = ctk.CTkFrame(card, corner_radius=11, fg_color=header_bg, height=54)
+        head.grid(row=0, column=0, sticky="ew", padx=2, pady=2)
+        head.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(
+            head, text=title, font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="#17202a"
+        ).grid(row=0, column=0, padx=10, pady=15)
+        if popular:
+            ctk.CTkLabel(
+                head, text="MÁS POPULAR", font=ctk.CTkFont(size=9, weight="bold"),
+                text_color="white", fg_color=accent, corner_radius=5
+            ).grid(row=0, column=1, padx=(0, 8), pady=14)
+
+        ctk.CTkLabel(
+            card, text=price, font=ctk.CTkFont(size=29, weight="bold"),
+            text_color="#17202a"
+        ).grid(row=1, column=0, pady=(20, 0))
+        ctk.CTkLabel(
+            card, text="/ MES", font=ctk.CTkFont(size=11), text_color="gray45"
+        ).grid(row=2, column=0, pady=(0, 12))
+
+        feature_frame = ctk.CTkFrame(card, fg_color="transparent")
+        feature_frame.grid(row=3, column=0, sticky="nsew", padx=22, pady=5)
+        feature_frame.grid_columnconfigure(0, weight=1)
+        for i, feature in enumerate(features.split("\n")):
+            line = ctk.CTkFrame(feature_frame, fg_color="transparent")
+            line.grid(row=i, column=0, sticky="ew", pady=7)
+            line.grid_columnconfigure(1, weight=1)
+            ctk.CTkLabel(
+                line, text="●", width=18, text_color=accent,
+                font=ctk.CTkFont(size=10, weight="bold")
+            ).grid(row=0, column=0, sticky="w")
+            ctk.CTkLabel(
+                line, text=feature, anchor="w", justify="left",
+                font=ctk.CTkFont(size=11), text_color="#303840"
+            ).grid(row=0, column=1, sticky="w")
+
+        ctk.CTkButton(
+            card, text=button_text, height=40, fg_color=accent, hover_color=hover,
+            font=ctk.CTkFont(size=11, weight="bold"),
+            command=lambda key=plan_key, label=title: self._select_plan(key, label)
+        ).grid(row=4, column=0, sticky="ew", padx=22, pady=(8, 22))
+
+    def _select_plan(self, key, label):
+        self.selected_plan = key
+        self.plan_status.configure(text=f"Plan seleccionado: {label}")
 
     def _grab(self):
-        try: self.grab_set()
-        except Exception: pass
+        try:
+            self.grab_set()
+            self.focus_force()
+        except Exception:
+            pass
 
     def _continue(self):
-        try: self.grab_release()
-        except Exception: pass
+        try:
+            self.grab_release()
+        except Exception:
+            pass
         self.destroy()
         self.on_continue()
 
